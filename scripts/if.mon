@@ -1,0 +1,14 @@
+unit Ex
+{
+    on MdReload -> ()
+        local desc = 'A if statement';
+        
+        local showld = 0;
+        if (showld)
+            Print('it\'s true!');
+            return 0;
+        end
+
+        Print('false..');
+    end
+}

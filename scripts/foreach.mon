@@ -1,0 +1,9 @@
+unit Foreach
+{
+    on MdReload -> ()
+        local words = 'Hello World!';
+        foreach ch in words
+            Print(ch);
+        end
+    end
+}

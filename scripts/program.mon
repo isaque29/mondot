@@ -1,0 +1,6 @@
+unit Program
+{
+    on MdSuperInit -> ()
+        Print('The MonDot test codes');
+    end
+}

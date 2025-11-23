@@ -1,6 +1,0 @@
-unit Program
-{
-    on Hit -> ()
-        Print('attack');
-    end
-}

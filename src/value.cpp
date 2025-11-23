@@ -31,7 +31,8 @@ Value Value::make_rule(const Rule &rule)
 
 string value_to_string(const Value &v)
 {
-    switch(v.tag){
+    switch(v.tag)
+    {
         case Tag::Nil: return "nil";
         case Tag::Number:
         {
