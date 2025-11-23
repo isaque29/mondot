@@ -3,4 +3,8 @@ unit Program
     on MdSuperInit -> ()
         Print('Main init from unit Proram');
     end
+
+    on MdReload -> ()
+        Print('mnmnmnmnmnmnmnm');
+    end
 }

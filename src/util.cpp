@@ -9,7 +9,7 @@
  #include <unistd.h>
 #endif
 
-bool DEBUG = true;
+bool DEBUG = false;
 static bool TERM_SUPPORTS_COLOR = false;
 
 void enable_terminal_colors()

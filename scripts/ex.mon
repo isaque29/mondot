@@ -9,9 +9,9 @@ unit Ex
         Print('here i\'m about run the program');
         Print('here i\'m about run the program');
         
-        x = Spawn('oi');
+        y = Spawn('y');
+        n = Spawn('n');
         Print(x);
         
-        Print('mnmnmnmnmnmnmnm');
     end
 }
