@@ -5,10 +5,10 @@ unit Ex
         
         local showld = true;
         if (showld)
-            Print('it\'s true!');
+            io.print('it\'s true!');
             return 0;
         end
 
-        Print('false..');
+        io.print('false..');
     end
 }

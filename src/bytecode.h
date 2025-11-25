@@ -25,15 +25,10 @@ enum OpCode : uint8_t
     OP_JMP,            // a = target ip or relative (we use absolute addresses)
     OP_JMP_IF_FALSE,   // a = target ip
 
-    // original simpler ops (kept for compatibility)
-    OP_PRINT,
+    // legacy
     OP_SPAWN,
     OP_RET,
     OP_DROP,
-    OP_LOAD_NUM, // legacy: keep for compatibility with older compiler paths
-    OP_LOAD_STR,
-    OP_LOAD_GLOBAL,
-    OP_STORE_GLOBAL_LEGACY
 };
 
 struct Op

@@ -13,6 +13,7 @@
 #include "module.h"
 #include "vm.h"
 #include "host.h"
+#include "host_core_funcs.h"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -29,60 +30,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // register useful host functions
-    GLOBAL_HOST.register_function("Print", [](const std::vector<Value> &args)->Value
-    {
-        if(!args.empty()) std::cout << value_to_string(args[0]) << std::endl;
-        else std::cout << "nil" << std::endl;
-        return Value::make_nil();
-    });
-
-    GLOBAL_HOST.register_function("Console.Write", [](const std::vector<Value> &args)->Value
-    {
-        if(!args.empty()) std::cout << value_to_string(args[0]);
-        return Value::make_nil();
-    });
-
-    GLOBAL_HOST.register_function("strlen", [](const std::vector<Value> &args)->Value
-    {
-        if(!args.empty() && args[0].tag == Tag::String)
-            return Value::make_number((double)args[0].s->size());
-        return Value::make_number(0.0);
-    });
-
-    GLOBAL_HOST.register_function("str_char_at", [](const std::vector<Value> &args)->Value
-    {
-        if(args.size()>=2 && args[0].tag==Tag::String && args[1].tag==Tag::Number)
-        {
-            int idx = (int)args[1].num;
-            if(idx >= 0 && idx < (int)args[0].s->size()) {
-                std::string r(1, (*args[0].s)[idx]);
-                return Value::make_string(r);
-            }
-        }
-        return Value::make_string("");
-    });
-
-    GLOBAL_HOST.register_function("add", [](const std::vector<Value> &args)->Value
-    {
-        if(args.size()>=2 && args[0].tag==Tag::Number && args[1].tag==Tag::Number)
-            return Value::make_number(args[0].num + args[1].num);
-        return Value::make_number(0.0);
-    });
-
-    GLOBAL_HOST.register_function("sub", [](const std::vector<Value> &args)->Value
-    {
-        if(args.size()>=2 && args[0].tag==Tag::Number && args[1].tag==Tag::Number)
-            return Value::make_number(args[0].num - args[1].num);
-        return Value::make_number(0.0);
-    });
-
-    GLOBAL_HOST.register_function("lt", [](const std::vector<Value> &args)->Value
-    {
-        if(args.size()>=2 && args[0].tag==Tag::Number && args[1].tag==Tag::Number)
-            return Value::make_number(args[0].num < args[1].num ? 1.0 : 0.0);
-        return Value::make_number(0.0);
-    });
+    mondot_host::register_core_host_functions(GLOBAL_HOST);
+    mondot_host::register_extra_host_functions(GLOBAL_HOST);
 
     // VM
     VM vm(GLOBAL_HOST);

@@ -6,11 +6,12 @@ unit Program
 
         while (1)
             n = add(n, 1);
-            Print(n);
+            io.write(add(n, ' '));
 
             if (n)
             else
-                Print('ok');
+                io.writeln('\nok');
+                io.flush();
                 return 0;
             end
         end
