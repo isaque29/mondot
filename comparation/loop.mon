@@ -1,0 +1,15 @@
+unit Program
+{
+    on MdSuperInit -> ()
+        local n = sub(0, 100000);
+
+        while (true)
+            n = add(n, 1);
+            Print(n);
+
+            nif (n)
+                return 0;
+            end
+        end
+    end
+}

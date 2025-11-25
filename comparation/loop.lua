@@ -1,4 +1,8 @@
-local x = 0
+local n = -100000
+
 while true:
-    x +=1
-    print x
+    n += 1
+    print (n)
+
+    if not n:
+        break

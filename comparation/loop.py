@@ -1,4 +1,8 @@
-x = 0
+n = -100000
+
 while True:
-    x +=1
-    print(x)
+    n += 1
+    print (n)
+
+    if not n:
+        break
