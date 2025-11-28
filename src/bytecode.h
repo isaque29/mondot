@@ -20,15 +20,11 @@ enum OpCode : uint8_t
     // calls / fn
     OP_CALL,  // a = arg count, b: special (-1 host/global by name in .s, -2 dynamic callee on stack)
     OP_POP,   // a = count to pop
+    OP_RET,
 
     // flow control
     OP_JMP,            // a = target ip or relative (we use absolute addresses)
     OP_JMP_IF_FALSE,   // a = target ip
-
-    // legacy
-    OP_SPAWN,
-    OP_RET,
-    OP_DROP,
 };
 
 struct Op

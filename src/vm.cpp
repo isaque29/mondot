@@ -120,23 +120,6 @@ Value VM::call_bytecode_function(Module* m, int func_idx, const vector<Value> &a
             case OP_RET:
                 if(!eval_stack.empty()) return eval_stack.back();
                 return Value::make_nil();
-            case OP_SPAWN:
-                if(valid_const_idx(f, op.a))
-                {
-                    Value arg = f.consts[op.a];
-                    string typ = (arg.tag==Tag::String && arg.s) ? *arg.s : string("?");
-                    Rule r = host.create_rule(typ);
-                    Value rv = Value::make_rule(r);
-                    if(op.b >= 0 && valid_local_idx(frame, op.b)) frame.locals[op.b] = rv;
-                    else dbg("SPAWN: tmp dropped or invalid local");
-                }
-                else dbg("SPAWN: invalid const index");
-                break;
-            case OP_DROP:
-                if(op.a == -1) { if(!frame.locals.empty()) frame.locals.back() = Value(); }
-                else if(valid_local_idx(frame, op.a)) frame.locals[op.a] = Value();
-                else dbg("DROP: invalid local");
-                break;
             default:
                 dbg("call_bytecode_function: unknown opcode");
                 break;
@@ -250,26 +233,6 @@ void VM::execute_handler_idx(Module* m, int idx) {
                     dbg("VM: exit handler");
                     return;
                 }
-            case OP_SPAWN:
-                if(valid_const_idx(f, op.a))
-                {
-                    Value arg = f.consts[op.a];
-                    string typ = (arg.tag==Tag::String && arg.s) ? *arg.s : string("?");
-                    Rule r = host.create_rule(typ);
-                    Value rv = Value::make_rule(r);
-                    if(op.b >= 0 && valid_local_idx(frame, op.b)) frame.locals[op.b] = rv;
-                    else dbg("SPAWN tmp dropped");
-                }
-                else dbg("SPAWN invalid const");
-                break;
-            case OP_DROP:
-                if(op.a == -1)
-                {
-                    if(!frame.locals.empty()) frame.locals.back() = Value();
-                }
-                else if(valid_local_idx(frame, op.a)) frame.locals[op.a] = Value();
-                else dbg("DROP invalid local");
-                break;
             default:
                 dbg("VM: unknown opcode");
                 break;
