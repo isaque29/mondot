@@ -17,6 +17,11 @@ enum OpCode : uint8_t
     OP_PUSH_GLOBAL,  // s = name
     OP_STORE_GLOBAL, // s = name
 
+    //
+    OP_ADD,
+    OP_SUB,
+    OP_LT,
+
     // calls / fn
     OP_CALL,  // a = arg count, b: special (-1 host/global by name in .s, -2 dynamic callee on stack)
     OP_POP,   // a = count to pop

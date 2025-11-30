@@ -4,65 +4,136 @@
 
 using namespace std;
 
-Parser::Parser(const string &s): lex(s) { cur = lex.next(); }
+Parser::Parser(const string &s): lex(s)
+{
+    cur = lex.next();
+}
+void Parser::eat()
+{
+    cur = lex.next();
+}
+bool Parser::accept(TokenKind k)
+{
+    if(cur.kind==k)
+    {
+        eat();
+        return true;
+    }
+    return false;
+}
+void Parser::expect(TokenKind k, const string &msg)
+{
+    if(cur.kind!=k) throw runtime_error(string("parse error: expected ")+msg+" got '"+cur.text+"' at line "+to_string(cur.line));
+    eat();
+}
 
-void Parser::eat() { cur = lex.next(); }
-bool Parser::accept(TokenKind k) { if(cur.kind==k){ eat(); return true; } return false; }
-void Parser::expect(TokenKind k, const string &msg) { if(cur.kind!=k) throw runtime_error(string("parse error: expected ")+msg+" got '"+cur.text+"' at line "+to_string(cur.line)); eat(); }
-
-unique_ptr<Program> Parser::parse_program() {
+unique_ptr<Program> Parser::parse_program()
+{
     auto p = make_unique<Program>();
-    while(cur.kind != TokenKind::End) {
+    while(cur.kind != TokenKind::End)
+    {
         if(cur.kind == TokenKind::Kw_unit) p->units.push_back(parse_unit());
         else throw runtime_error("expected 'unit' at top-level");
     }
     return p;
 }
 
-unique_ptr<UnitDecl> Parser::parse_unit() {
+unique_ptr<UnitDecl> Parser::parse_unit()
+{
     expect(TokenKind::Kw_unit, "unit");
     if(cur.kind != TokenKind::Identifier) throw runtime_error("expected unit name");
-    string uname = cur.text; eat();
+
+    string uname = cur.text;
+    eat();
     expect(TokenKind::LBrace, "{");
     auto u = make_unique<UnitDecl>();
     u->name = uname;
-    while(cur.kind != TokenKind::RBrace) {
+
+    // TODO: better handling
+    while(cur.kind != TokenKind::RBrace)
+    {
         if(cur.kind == TokenKind::Kw_on) u->handlers.push_back(parse_handler());
-        else throw runtime_error("expected 'on' in unit");
+        else u->handlers.push_back(parse_annon_handler());
     }
     expect(TokenKind::RBrace, "}");
     return u;
 }
 
-unique_ptr<HandlerDecl> Parser::parse_handler() {
+unique_ptr<HandlerDecl> Parser::parse_annon_handler()
+{
+    auto h = make_unique<HandlerDecl>();
+    h->name = "MdSuperInit";
+    h->params = vector<string>();
+
+    while(cur.kind != TokenKind::Kw_end)
+    {
+        if(cur.kind == TokenKind::Semicolon)
+        {
+            eat();
+            continue;
+        }
+
+        h->body.push_back(parse_statement());
+    }
+    return h;
+}   
+
+unique_ptr<HandlerDecl> Parser::parse_handler()
+{
     expect(TokenKind::Kw_on, "on");
-    if(cur.kind != TokenKind::Identifier) throw runtime_error("expected event name");
-    string hname = cur.text; eat();
-    expect(TokenKind::Arrow, "->");
+    if(cur.kind != TokenKind::Identifier) throw runtime_error("expected function name");
+
+    string hname = cur.text;
+    eat();
+
+    if(cur.kind == TokenKind::Arrow || cur.kind == TokenKind::Equal)
+        expect(TokenKind::Arrow, "->");
+    else if(cur.kind == TokenKind::Equal)
+        expect(TokenKind::Equal, "=");
+    else throw runtime_error("expected a function or at least an event id.");
+    
     expect(TokenKind::LParen, "(");
-    // parse params (optional)
+
+    // TODO: better handling
     vector<string> params;
-    if(cur.kind != TokenKind::RParen) {
-        if(cur.kind == TokenKind::Identifier) {
-            params.push_back(cur.text); eat();
-            while(cur.kind == TokenKind::Comma) { eat(); if(cur.kind==TokenKind::Identifier){ params.push_back(cur.text); eat(); } else throw runtime_error("expected param name"); }
+    if(cur.kind != TokenKind::RParen)
+    {
+        if(cur.kind == TokenKind::Identifier)
+        {
+            params.push_back(cur.text);
+            eat();
+            while(cur.kind == TokenKind::Comma)
+            {
+                eat();
+                if(cur.kind==TokenKind::Identifier)
+                {
+                    params.push_back(cur.text);
+                    eat();
+                }
+                else throw runtime_error("expected param name");
+            }
         }
     }
     expect(TokenKind::RParen, ")");
+
     auto h = make_unique<HandlerDecl>();
     h->name = hname;
     h->params = params;
 
-    // parse body until 'end'
-    while(cur.kind != TokenKind::Kw_end) {
-        if(cur.kind == TokenKind::Semicolon) { eat(); continue; }
+    while(cur.kind != TokenKind::Kw_end)
+    {
+        if(cur.kind == TokenKind::Semicolon)
+        {
+            eat();
+            continue;
+        }
+
         h->body.push_back(parse_statement());
     }
     expect(TokenKind::Kw_end, "end");
     return h;
 }
 
-// parse a top-level statement inside handler
 unique_ptr<Stmt> Parser::parse_statement()
 {
     if(cur.kind == TokenKind::Kw_local)
@@ -92,11 +163,11 @@ unique_ptr<Stmt> Parser::parse_statement()
         auto cond = parse_expression();
         expect(TokenKind::RParen, ")");
         vector<unique_ptr<Stmt>> then_body;
+
         while(!(cur.kind==TokenKind::Kw_elseif||cur.kind==TokenKind::Kw_else||cur.kind==TokenKind::Kw_end))
-        {
             then_body.push_back(parse_statement());
-        }
-        auto s = Stmt::make_if(move(cond), move(then_body));
+
+            auto s = Stmt::make_if(move(cond), move(then_body));
         // elseif parts
         while(cur.kind == TokenKind::Kw_elseif)
         {
@@ -105,14 +176,19 @@ unique_ptr<Stmt> Parser::parse_statement()
             auto econd = parse_expression();
             expect(TokenKind::RParen, ")");
             vector<unique_ptr<Stmt>> eb;
-            while(!(cur.kind==TokenKind::Kw_elseif||cur.kind==TokenKind::Kw_else||cur.kind==TokenKind::Kw_end)) eb.push_back(parse_statement());
+
+            while(!(cur.kind==TokenKind::Kw_elseif||cur.kind==TokenKind::Kw_else||cur.kind==TokenKind::Kw_end))
+                eb.push_back(parse_statement());
+
             s->elseif_parts.emplace_back(move(econd), move(eb));
         }
         if(cur.kind == TokenKind::Kw_else)
         {
             eat();
             vector<unique_ptr<Stmt>> elseb;
-            while(!(cur.kind==TokenKind::Kw_end)) elseb.push_back(parse_statement());
+
+            while(!(cur.kind==TokenKind::Kw_end))
+                elseb.push_back(parse_statement());
             s->else_body = move(elseb);
         }
         expect(TokenKind::Kw_end, "end");
@@ -124,8 +200,11 @@ unique_ptr<Stmt> Parser::parse_statement()
         expect(TokenKind::LParen, "(");
         auto cond = parse_expression();
         expect(TokenKind::RParen, ")");
+
         vector<unique_ptr<Stmt>> body;
-        while(cur.kind != TokenKind::Kw_end) body.push_back(parse_statement());
+        while(cur.kind != TokenKind::Kw_end)
+            body.push_back(parse_statement());
+        
         expect(TokenKind::Kw_end, "end");
         return Stmt::make_while(move(cond), move(body));
     }
@@ -134,18 +213,22 @@ unique_ptr<Stmt> Parser::parse_statement()
         eat();
         expect(TokenKind::LParen, "(");
         if(cur.kind != TokenKind::Identifier) throw runtime_error("expected identifier after foreach");
+
         string itname = cur.text; eat();
         expect(TokenKind::Kw_in, "in");
         auto iter_expr = parse_expression();
         expect(TokenKind::RParen, ")");
+
         vector<unique_ptr<Stmt>> body;
-        while(cur.kind != TokenKind::Kw_end) body.push_back(parse_statement());
+        while(cur.kind != TokenKind::Kw_end)
+        body.push_back(parse_statement());
 
         expect(TokenKind::Kw_end, "end");
         return Stmt::make_foreach(itname, move(iter_expr), move(body));
     }
     if(cur.kind == TokenKind::Kw_return)
     {
+        // TODO: better handling
         eat();
         auto e = parse_expression();
         expect(TokenKind::Semicolon, ";");
@@ -155,7 +238,8 @@ unique_ptr<Stmt> Parser::parse_statement()
     // local assign / identifier start (could be assignment or call)
     if(cur.kind == TokenKind::Identifier)
     {
-        string id = cur.text; eat();
+        string id = cur.text;
+        eat();
         if(cur.kind == TokenKind::Equal)
         {
             // assignment
@@ -172,9 +256,7 @@ unique_ptr<Stmt> Parser::parse_statement()
             return Stmt::make_expr(move(call));
         }
         else
-        {
             throw runtime_error("unexpected token after identifier: " + cur.text);
-        }
     }
 
     // literal expr stmt
@@ -219,7 +301,8 @@ unique_ptr<Expr> Parser::parse_primary()
     {
         string id = cur.text; eat();
         if(cur.kind == TokenKind::LParen) return parse_call_expr(id);
-        // identifier could be dotted (Console.Write) — already lexed as one id
+
+        // identifier could be dotted (io.print) — already lexed as one id
         auto e = make_unique<Expr>();
         e->kind = Expr::KIdent;
         e->ident = id;
@@ -228,8 +311,6 @@ unique_ptr<Expr> Parser::parse_primary()
     if(cur.kind == TokenKind::LParen)
     {
         // possibly func literal: (params) ... end
-        // If next token after LParen is identifier or ), treat as func literal only if followed by body tokens (heuristic)
-        // We'll check: if we see ')' then next token LBrace or identifier? For simplicity we attempt to parse function literal here.
         return parse_func_literal();
     }
     throw runtime_error(string("parse expr error at token '") + cur.text + "'");

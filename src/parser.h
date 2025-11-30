@@ -6,7 +6,8 @@
 #include <string>
 #include <memory>
 
-struct Parser {
+struct Parser
+{
     Lexer lex;
     Token cur;
     Parser(const std::string &s);
@@ -17,6 +18,7 @@ struct Parser {
     std::unique_ptr<Program> parse_program();
     std::unique_ptr<UnitDecl> parse_unit();
     std::unique_ptr<HandlerDecl> parse_handler();
+    std::unique_ptr<HandlerDecl> parse_annon_handler();
 
     std::unique_ptr<Stmt> parse_statement();
     std::unique_ptr<Stmt> parse_local_decl_or_assign_or_call();

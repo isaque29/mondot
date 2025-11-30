@@ -1,6 +1,4 @@
 unit Program
 {
-    on MdSuperInit -> ()
-        io.print('The MonDot test codes');
-    end
+    io.print('The MonDot test codes');
 }

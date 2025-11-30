@@ -8,7 +8,8 @@
 #include <vector>
 #include <mutex>
 
-struct Module {
+struct Module
+{
     std::string name;
     ByteModule bytecode;
     std::atomic<int> active_calls{0};
@@ -16,7 +17,8 @@ struct Module {
     Module() = default;
 };
 
-struct ModuleManager {
+struct ModuleManager
+{
     std::unordered_map<std::string, Module*> modules;
     std::mutex modules_mtx;
 
