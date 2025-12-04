@@ -46,8 +46,9 @@ void VM::execute_handler(Module* m, const string &handler_name)
 Value VM::call_bytecode_function(Module* m, int func_idx, const vector<Value> &args)
 {
     if(!m) return Value::make_nil();
-    if(func_idx < 0 || func_idx >= (int)m->bytecode.funcs.size()) {
-        if(DEBUG) dbg("call_bytecode_function: invalid idx");
+    if(func_idx < 0 || func_idx >= (int)m->bytecode.funcs.size())
+    {
+        dbg("call_bytecode_function: invalid idx");
         return Value::make_nil();
     }
     ByteFunc &f = m->bytecode.funcs[func_idx];
@@ -87,7 +88,7 @@ Value VM::call_bytecode_function(Module* m, int func_idx, const vector<Value> &a
                 {
                     Value v = std::move(eval_stack.back()); eval_stack.pop_back();
                     if(valid_local_idx(frame, op.a)) frame.locals[op.a] = std::move(v);
-                    else if(DEBUG) dbg("STORE_LOCAL: invalid local");
+                    else dbg("STORE_LOCAL: invalid local");
                 }
                 break;
 
@@ -191,7 +192,7 @@ Value VM::call_bytecode_function(Module* m, int func_idx, const vector<Value> &a
             }
 
             default:
-                if(DEBUG) dbg("call_bytecode_function: unknown opcode");
+                dbg("call_bytecode_function: unknown opcode");
                 break;
         }
     }
@@ -340,18 +341,18 @@ void VM::execute_handler_idx(Module* m, int idx)
                 if(eval_stack.size() > base_sp)
                 {
                     eval_stack.resize(base_sp);
-                    if(DEBUG) dbg("VM: exit handler");
+                    dbg("VM: exit handler");
                     return;
                 }
                 else
                 {
                     eval_stack.resize(base_sp);
-                    if(DEBUG) dbg("VM: exit handler");
+                    dbg("VM: exit handler");
                     return;
                 }
 
             default:
-                if(DEBUG) dbg("VM: unknown opcode");
+                dbg("VM: unknown opcode");
                 break;
         }
     }

@@ -57,12 +57,15 @@ int main(int argc, char **argv)
             string source = slurp_file(sf.path);
             Parser parser(source);
             auto prog = parser.parse_program();
+            dump_program_tokens(prog.get());
             if(prog->units.empty()) continue;
 
             for(auto &u : prog->units)
             {
                 CompiledUnit cu = compile_unit(u.get());
                 Module *m = module_from_compiled(cu);
+                dump_module_bytecode(m);
+                
                 G_MODULES.hot_swap(m);
 
                 // call MdInit once per module (first time loaded)
@@ -120,10 +123,12 @@ int main(int argc, char **argv)
                                 string source = slurp_file(path);
                                 Parser parser(source);
                                 auto prog = parser.parse_program();
+                                dump_program_tokens(prog.get());
                                 for(auto &u : prog->units)
                                 {
                                     CompiledUnit cu = compile_unit(u.get());
                                     Module *m = module_from_compiled(cu);
+                                    dump_module_bytecode(m);
 
                                     // hot-swap existing module with same name
                                     G_MODULES.hot_swap(m);
@@ -152,10 +157,13 @@ int main(int argc, char **argv)
                         string source = slurp_file(path);
                         Parser parser(source);
                         auto prog = parser.parse_program();
+                        dump_program_tokens(prog.get());
                         for(auto &u : prog->units)
                         {
                             CompiledUnit cu = compile_unit(u.get());
                             Module *m = module_from_compiled(cu);
+                            dump_module_bytecode(m);
+
                             G_MODULES.hot_swap(m);
 
                             // call MdInit
