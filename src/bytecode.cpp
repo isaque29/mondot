@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
+#include "host_manifest.h"
 
 using namespace std;
 
@@ -24,7 +25,8 @@ CompiledUnit compile_unit(UnitDecl *u)
     ByteModule mod; mod.name = u->name;
     CompiledUnit cu; cu.module = mod;
 
-    for(auto &hptr : u->handlers) {
+    for(auto &hptr : u->handlers)
+    {
         HandlerDecl *h = hptr.get();
         ByteFunc bf;
         unordered_map<string,int> local_index;
@@ -45,7 +47,8 @@ CompiledUnit compile_unit(UnitDecl *u)
         function<void(Expr*)> compile_expr;
         compile_expr = [&](Expr* e)
         {
-            switch(e->kind) {
+            switch(e->kind)
+            {
                 case Expr::KBoolean: {
                     int ci = push_const(bf, Value::make_boolean(e->num));
                     emit(Op(OP_PUSH_CONST, ci, 0));
@@ -69,50 +72,61 @@ CompiledUnit compile_unit(UnitDecl *u)
                 case Expr::KIdent: {
                     int lid = try_get_local(local_index, e->ident);
                     if(lid >= 0) emit(Op(OP_PUSH_LOCAL, lid, 0));
-                    else { Op o(OP_PUSH_GLOBAL,0,0); o.s = e->ident; emit(o); }
+                    else throw runtime_error(
+                            string("unresolved identifier '") + e->ident +
+                            "': globals are not allowed; declare as local or pass as parameter"
+                        );
                     break;
                 }
                 case Expr::KCall: {
                     // compile args left-to-right
                     for(auto &a : e->args) compile_expr(a.get());
 
-                    // if call name resolves to a local (function variable), do dynamic
                     int lid = try_get_local(local_index, e->call_name);
-                    if(lid >= 0) {
-                        // push callee (held in local), then OP_CALL with b == -2 meaning dynamic callee on stack
+                    if(lid >= 0)
+                    {
                         emit(Op(OP_PUSH_LOCAL, lid, 0));
                         emit(Op(OP_CALL, (int)e->args.size(), -2));
-                    } else {
-                        Op call(OP_CALL, (int)e->args.size(), -1);
-                        call.s = e->call_name; // host/global name (may include dots)
-                        emit(call);
+                    }
+                    else
+                    {
+                        if (HostManifest::has(e->call_name))
+                        {
+                            Op call(OP_CALL, (int)e->args.size(), -1);
+                            call.s = e->call_name;
+                            emit(call);
+                        }
+                        else
+                        {
+                            throw runtime_error(
+                                string("unresolved function '") + e->call_name +
+                                "': globals not allowed; assign function to local variable or import explicitly"
+                            );
+                        }
                     }
                     break;
                 }
                 case Expr::KCallExpr: {
-                    // some AST variants separate call-expression nodes; fallback: treat same as KCall
                     // TODO
                     throw runtime_error("KCallExpr unsupported in this compile path");
                 }
                 case Expr::KFuncLiteral: {
-                    // Nested function literal / closure compilation is non-trivial (requires environment capture).
-                    // To keep compiler simple we don't support this now.
+                    // TODO.
                     throw runtime_error("function literal not supported in this compiler (closures not implemented)");
                 }
                 default:
                     throw runtime_error("unsupported expr kind in compile_expr");
-            } // switch
+            }
         };
 
-        // compile block (stmts)
-        // Note: this assumes Stmt has a set of kinds and fields consistent with the compiler.
         function<void(const vector<unique_ptr<Stmt>>&)> compile_block;
         compile_block = [&](const vector<unique_ptr<Stmt>> &stmts)
         {
             for(size_t si=0; si<stmts.size(); ++si) {
                 Stmt *st = stmts[si].get();
                 switch(st->kind) {
-                    case Stmt::KLocalDecl: { // local declaration: expected fields local_name, local_init (Expr*)
+                    case Stmt::KLocalDecl: {
+                        // local declaration: expected fields local_name, local_init (Expr*)
                         if(!st->local_name.size()) throw runtime_error("local decl requires name");
                         if(st->local_init) {
                             compile_expr(st->local_init.get());
@@ -124,15 +138,18 @@ CompiledUnit compile_unit(UnitDecl *u)
                         emit(Op(OP_STORE_LOCAL, lid, 0));
                         break;
                     }
-                    case Stmt::KAssign: { // assignment: lhs (string), rhs (Expr*)
+                    case Stmt::KAssign: {
+                        // assignment: lhs (string), rhs (Expr*)
                         if(!st->lhs.size()) throw runtime_error("assign requires lhs");
                         compile_expr(st->rhs.get());
+                        
                         int lid = try_get_local(local_index, st->lhs);
-                        if(lid < 0) lid = add_local(st->lhs); // auto local if not declared previously
+                        if(lid < 0) throw runtime_error(string("assign to undeclared name '") + st->lhs + "': declare as local first");
                         emit(Op(OP_STORE_LOCAL, lid, 0));
                         break;
                     }
-                    case Stmt::KExpr: { // expression statement: e.g., function call
+                    case Stmt::KExpr: {
+                        // expression statement: e.g., function call
                         if(!st->expr) throw runtime_error("expr stmt without expression");
                         if(st->expr->kind != Expr::KCall) throw runtime_error("expr stmt must be a call in this prototype");
                         // compile call & drop return
@@ -140,7 +157,8 @@ CompiledUnit compile_unit(UnitDecl *u)
                         emit(Op(OP_POP, 1, 0));
                         break;
                     }
-                    case Stmt::KIf: { // if statement with optional elseif parts and else
+                    case Stmt::KIf: {
+                        // if statement with optional elseif parts and else
                         // fields: cond (Expr*), then_body (vector<Stmt>), elseif_parts (vector<pair<Expr*, vector<Stmt>>>), else_body (vector<Stmt>)
                         compile_expr(st->cond.get());
                         // emit JMP_IF_FALSE to after then
@@ -264,9 +282,9 @@ CompiledUnit compile_unit(UnitDecl *u)
                     }
                     default:
                         throw runtime_error("unsupported stmt kind in compile_unit");
-                } // switch stmt kind
-            } // for stmts
-        }; // compile_block
+                }
+            }
+        };
 
         compile_block(h->body);
         emit(Op(OP_RET,0,0));

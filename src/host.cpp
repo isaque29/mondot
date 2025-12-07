@@ -1,4 +1,5 @@
 #include "host.h"
+#include "host_manifest.h"
 
 Rule HostBridge::create_rule(const std::string &type)
 {
@@ -12,6 +13,7 @@ void HostBridge::release_rule(const Rule &r)
 void HostBridge::register_function(const std::string &name, HostFn fn)
 {
     functions[name] = std::move(fn);
+    HostManifest::register_name(name);
 }
 bool HostBridge::has_function(const std::string &name) const
 {

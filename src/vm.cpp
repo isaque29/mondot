@@ -79,10 +79,6 @@ Value VM::call_bytecode_function(Module* m, int func_idx, const vector<Value> &a
                 else eval_stack.push_back(Value::make_nil());
                 break;
 
-            case OP_PUSH_GLOBAL:
-                eval_stack.push_back(load_global(m, op.s));
-                break;
-
             case OP_STORE_LOCAL:
                 if(eval_stack.size() <= base_sp) { errlog("STORE_LOCAL: stack underflow"); break; }
                 {
@@ -230,10 +226,6 @@ void VM::execute_handler_idx(Module* m, int idx)
                 else eval_stack.push_back(Value::make_nil());
                 break;
 
-            case OP_PUSH_GLOBAL:
-                eval_stack.push_back(load_global(m, op.s));
-                break;
-
             case OP_STORE_LOCAL:
                 if(eval_stack.size() <= base_sp)
                 {
@@ -359,13 +351,4 @@ void VM::execute_handler_idx(Module* m, int idx)
 
     eval_stack.resize(base_sp);
     for(auto &lv : frame.locals) lv = Value();
-}
- 
-Value VM::load_global(Module* m, const string &name)
-{
-    if(host.has_function(name))
-        return Value::make_nil();
-    
-    dbg("load_global: " + name + " (not implemented) in module " + (m?m->name:string("<null>")));
-    return Value::make_nil();
 }

@@ -25,7 +25,6 @@ private:
     std::vector<Value> eval_stack;
     std::vector<Value> arg_scratch;
     Value call_bytecode_function(Module* m, int func_idx, const std::vector<Value> &args);
-    Value load_global(Module* m, const std::string &name);
 };
 
 #endif

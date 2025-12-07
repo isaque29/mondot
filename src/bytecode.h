@@ -14,8 +14,6 @@ enum OpCode : uint8_t
     OP_PUSH_CONST,   // a = const idx
     OP_PUSH_LOCAL,   // a = local idx
     OP_STORE_LOCAL,  // a = local idx (store top)
-    OP_PUSH_GLOBAL,  // s = name
-    OP_STORE_GLOBAL, // s = name
 
     //
     OP_ADD,

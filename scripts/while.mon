@@ -2,7 +2,7 @@ unit Program
 {
     on MdReload -> ()
         -- A while loop
-        local n = sub(0, 100000);
+        local n = sub(0, 1000000);
 
         while (1)
             n = add(n, 1);
