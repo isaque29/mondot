@@ -1,0 +1,7 @@
+unit demo.if
+{
+    on UTest -> ()
+        if (true) return true;
+        end
+    end
+}

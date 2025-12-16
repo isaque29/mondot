@@ -19,8 +19,9 @@ struct VM
 {
     HostBridge &host;
     VM(HostBridge &h);
-    void execute_handler(Module* m, const std::string &handler_name);
-    void execute_handler_idx(Module* m, int idx);
+    Value execute_handler(Module* m, const std::string &handler_name);
+    Value execute_handler_idx(Module* m, int idx);
+    Value run_frame(Frame &fr);
 private:
     std::vector<Value> eval_stack;
     std::vector<Value> arg_scratch;

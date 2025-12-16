@@ -1,0 +1,9 @@
+unit while.disabled
+{
+    on UTest -> ()
+        while (0)
+            return false;
+        end
+        return true;
+    end
+}

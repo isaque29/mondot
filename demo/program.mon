@@ -1,0 +1,4 @@
+unit demo.program
+{
+    io.print('The MonDot test codes');
+}

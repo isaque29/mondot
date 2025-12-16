@@ -1,0 +1,17 @@
+unit demo.benchmarks.iteration
+{
+    on UBenchmark -> ()
+        local n = sub(0, 1000000);
+
+        while (1)
+            n = add(n, 1);
+            io.write(n);
+
+            if (n)
+            else
+                io.flush();
+                return 0;
+            end
+        end
+    end
+}
